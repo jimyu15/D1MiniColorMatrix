@@ -4,31 +4,29 @@
 #include "RTClib.h"
 #include "D1MiniColorMatrix.h"
 
-D1MiniColorMatrix matrix;
+D1MiniColorMatrix matrix;	//Setup the LED matrix module
 
-uint16_t rgb(uint16_t rr, uint16_t gg, uint16_t bb)
+uint16_t rgb(uint16_t rr, uint16_t gg, uint16_t bb)		//convert R, G, B into 16bit color data
 {
 	return ((rr >> 3) << 11) + ((gg >> 2) << 5) + (bb >> 3);
 }
 
 void setup()
 {
-	Serial.println("Hello!");
 
 }
 
 void loop()
 {
-	DateTime now = matrix.now();
+	DateTime now = matrix.now();		//Get current time data from RTC (real time clock) IC
 
-	matrix.fillMatrix(0x0);
+	matrix.fillMatrix(0x0);				//Fill the matrix to black
 	
-	uint16_t c1 = rgb(0, 255, 255), c2 = rgb(0, 0, 255);
-	matrix.drawWord((now.hour() + now.minute() / 35) % 12, rgb(255, 255, 0), rgb(0, 255, 0));
+	uint16_t c1, c2;
 
-	c1 = rgb(0, 255, 255);
-	c2 = rgb(0, 0, 255);
-	switch (now.minute() / 5)
+	c1 = rgb(0, 255, 255);		//Setting the color bar for the minute word
+	c2 = rgb(0, 255, 0);		//Setting the color bar for the minute word
+	switch (now.minute() / 5)	//Draw the minute word
 	{
 		case 0:
 		break;
@@ -67,18 +65,32 @@ void loop()
 		break;
 	}
 
-	c1 = 0xFFFF;
-	c2 = 0xFFFF;
-	if (now.minute() >= 35)
+	c1 = rgb(0, 255, 0);		//Setting the color bar for the to/past word
+	c2 = rgb(255, 255, 0);		//Setting the color bar for the to/past word
+	if (now.minute() >= 35)		//If minute >= 35 draw "TO"
 		matrix.drawWord(TO, c1, c2);
-	else
+	else if (now.minute() > 4)	//If 4 < minute < 35 draw "PAST"
 		matrix.drawWord(PAST, c1, c2);
 
-	for (int i = 0; i < 4; i++)
-		matrix.setCorner(i, (i < now.minute() % 5) ? rgb(255, 255, 255) : 0);
+	c1 = rgb(255, 255, 0);	//Setting the color bar for the hour word
+	c2 = rgb(255, 40, 0);	//Setting the color bar for the hour word
 
-	matrix.write();
+	matrix.drawWord((now.hour() + now.minute() / 35) % 12, c1, c2);	//Draw the hour word
+
+	for (int i = 0; i < 4; i++)
+		matrix.setCorner(i, (i < now.minute() % 5) ? rgb(255, 100, 0) : 0);	//Set the four corners showing the minute
+
+	Serial.print("Touch: ");
+	Serial.print(digitalRead(D5));
+	Serial.print("\t");
+	Serial.print(digitalRead(D6));
+	Serial.print("\t");
+	Serial.print(digitalRead(D7));
+	Serial.print("\t");
+	Serial.print(digitalRead(D8));
+	Serial.print("\t");
+	matrix.write();			//refresh and write the display
 	
-	delay(1000);
+	delay(20);
 
 }

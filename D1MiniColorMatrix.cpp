@@ -58,12 +58,12 @@ void D1MiniColorMatrix::drawPixel(int16_t x, int16_t y, uint16_t color)
 
 void D1MiniColorMatrix::setCorner(uint8_t n, uint8_t r, uint8_t g, uint8_t b)
 {
-	setPixelColor(n, gammatable[r], gammatable[g], gammatable[b]);
+	setPixelColor(3 - n % 4, gammatable[r], gammatable[g], gammatable[b]);
 }
 
 void D1MiniColorMatrix::setCorner(uint8_t n, uint16_t color)
 {
-	setPixelColor(n, getR(color), getG(color), getB(color));
+	setPixelColor(3 - n % 4, getR(color), getG(color), getB(color));
 }
 
 void D1MiniColorMatrix::write()
@@ -115,9 +115,9 @@ void D1MiniColorMatrix::drawMatrix(uint64_t bitmap, uint16_t color1, uint16_t co
 	for (int i = 0; i < length; i++)
 	{
 		uint32_t rr, gg, bb;
-		rr = map (i, 0, length - 1, color1 >> 11, color2 >> 11);
-		gg = map (i, 0, length - 1, (color1 >> 5) & 0x3F, (color2 >> 5) & 0x3F);
-		bb = map (i, 0, length - 1, color1 & 0x1F, color2 & 0x1F);
+		rr = map (i, 0, length - 1, color2 >> 11, color1 >> 11);
+		gg = map (i, 0, length - 1, (color2 >> 5) & 0x3F, (color1 >> 5) & 0x3F);
+		bb = map (i, 0, length - 1, color2 & 0x1F, color1 & 0x1F);
 		stripe[i] = (rr << 11) + (gg << 5) + bb;
 
 	}
@@ -145,7 +145,7 @@ void D1MiniColorMatrix::touchInit()
 	for (int i = 0; i < 4; i++)
 	{
 		pinMode(touchPin[i], INPUT);
-		attachInterrupt(touchPin[i], reinterpret_cast<void (*)()>(&D1MiniColorMatrix::touchPoll), CHANGE);
+		//attachInterrupt(touchPin[i], reinterpret_cast<void (*)()>(&D1MiniColorMatrix::touchPoll), CHANGE);
 	}
 }
 
