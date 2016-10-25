@@ -12,9 +12,6 @@
 #include <Wire.h>
 #include "RTClib.h"
 
-#define SWIPEUP 8
-#define SWIPEDOWN 9
-
 #define FIVE    13        // these are in hexadecimal
 #define TEN     14
 #define AQUARTER 15
@@ -144,22 +141,30 @@ public:
 
 	void write();
 
-	uint8_t readTouch();
+	uint8_t touchPosition();
+
+	uint8_t pressPosition();
+
+	uint8_t releasePosition();
+
+	uint32_t touchTime();
 
 	DateTime now();
 
 	RTC_DS3231 rtc;
 
 private:
-	volatile int touchPos = 0, touchStat = 0;
+	static int touchPos;
 
-	volatile uint32_t touchTime = 0;
+	static uint8_t pressPos, releasePos;
+
+	static uint32_t pressTime, releaseTime;
 
 	uint8_t matrixBuffer[192];
 
 	void touchInit();
 
-	int getTouchPos();
+	int readTouch();
 
 	void touchPoll();
 
@@ -169,5 +174,7 @@ private:
 
 	static uint8_t getB(uint16_t color);
 };
+
+
 
 #endif

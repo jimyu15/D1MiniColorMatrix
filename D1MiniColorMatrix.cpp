@@ -14,7 +14,10 @@
 #define _swap_uint16_t(a, b) { uint16_t t = a; a = b; b = t; }
 #endif
 
-// Constructor for single matrix:
+int D1MiniColorMatrix::touchPos = 0;
+uint8_t D1MiniColorMatrix::pressPos = 0, D1MiniColorMatrix::releasePos = 0;
+uint32_t D1MiniColorMatrix::pressTime = 0, D1MiniColorMatrix::releaseTime = 0;
+
 D1MiniColorMatrix::D1MiniColorMatrix() : Adafruit_GFX(8, 8), Adafruit_NeoPixel(4, D4, NEO_GRB + NEO_KHZ800)
 {
 	touchInit();
@@ -145,11 +148,11 @@ void D1MiniColorMatrix::touchInit()
 	for (int i = 0; i < 4; i++)
 	{
 		pinMode(touchPin[i], INPUT);
-		//attachInterrupt(touchPin[i], reinterpret_cast<void (*)()>(&D1MiniColorMatrix::touchPoll), CHANGE);
+		attachInterrupt(touchPin[i], reinterpret_cast<void (*)()>(&D1MiniColorMatrix::touchPoll), CHANGE);
 	}
 }
 
-int D1MiniColorMatrix::getTouchPos()
+int D1MiniColorMatrix::readTouch()
 {
 	uint8_t touchRead = 0;
 	for (int i = 0; i < 4; i++)
@@ -197,57 +200,61 @@ int D1MiniColorMatrix::getTouchPos()
 
 void D1MiniColorMatrix::touchPoll()
 {
-	static uint8_t swiped = 2;
-	int touchRead = getTouchPos();
+	int touchRead = readTouch();
+	static uint32_t noTouch = 0;
+	if (touchRead != touchPos)
+	{
+		if (noTouch == 0)
+			noTouch = millis();
+		else if (millis() - noTouch < 20)
+			touchRead = touchPos;
+	}
+	else
+		noTouch = 0;
 	
 	if (touchPos == 0 && touchRead > 0)
 	{
-		touchTime = millis();
-		touchPos = touchRead;
-		swiped = 2;
-		return;
+		pressTime = millis();
+		releasePos = 0;
+		releaseTime = 0;
+		pressPos = touchRead;
 	}
 
 	else if (touchRead == 0 && touchPos > 0)
 	{
-		if (millis() - touchTime > 20 && millis() - touchTime < 500)
-			touchStat = touchPos;
-		swiped = 0;
+		releaseTime = millis();
+		releasePos = touchPos;
 	}
 
-	else if (touchPos)
-	{
-		switch (touchRead - touchPos)
-		{
-			case 1:
-			if (swiped)
-				swiped--;
-			else
-				touchStat = SWIPEUP;
-			break;
 
-			case -1:
-			if (swiped)
-				swiped--;
-			else
-				touchStat = SWIPEDOWN;
-			break;
-
-			default:
-			break;
-		}
-	}
-
-	
 	touchPos = touchRead;
+
 
 }
 
-uint8_t D1MiniColorMatrix::readTouch()
+uint8_t D1MiniColorMatrix::touchPosition()
 {
-	uint8_t st = touchStat;
-	touchStat = 0;
-	return st;
+	return D1MiniColorMatrix::touchPos;
+}
+
+uint8_t D1MiniColorMatrix::pressPosition()
+{
+	return pressPos;
+}
+
+uint8_t D1MiniColorMatrix::releasePosition()
+{
+	return releasePos;
+}
+
+uint32_t D1MiniColorMatrix::touchTime()
+{
+	if (pressTime == 0)
+		return 0;
+	if (releaseTime > 0)
+		return releaseTime - pressTime;
+	else
+		return millis() - pressTime;
 }
 
 uint8_t D1MiniColorMatrix::getR(uint16_t color)

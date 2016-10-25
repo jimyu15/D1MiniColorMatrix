@@ -20,7 +20,7 @@ void loop()
 {
 	DateTime now = matrix.now();		//Get current time data from RTC (real time clock) IC
 
-	matrix.fillMatrix(0x0);				//Fill the matrix to black
+	matrix.fillMatrix(0);				//Fill the matrix to black
 	
 	uint16_t c1, c2;
 
@@ -77,18 +77,21 @@ void loop()
 
 	matrix.drawWord((now.hour() + now.minute() / 35) % 12, c1, c2);	//Draw the hour word
 
-	for (int i = 0; i < 4; i++)
-		matrix.setCorner(i, (i < now.minute() % 5) ? rgb(255, 100, 0) : 0);	//Set the four corners showing the minute
+	for (int i = 0; i < 4; i++)	//Set the four corners showing the minute
+	{
+		if (i < now.minute() % 5)	
+			matrix.setCorner(i, rgb(255, 100, 0));	
+		else
+			matrix.setCorner(i, 0);
+	}
 
-	Serial.print("Touch: ");
-	Serial.print(digitalRead(D5));
-	Serial.print("\t");
-	Serial.print(digitalRead(D6));
-	Serial.print("\t");
-	Serial.print(digitalRead(D7));
-	Serial.print("\t");
-	Serial.print(digitalRead(D8));
-	Serial.print("\t");
+	uint8_t touch = matrix.touchPosition();		//Read touch status
+	if (touch)
+	{
+		matrix.drawPixel(7, touch - 1, 0xFFFF);
+		matrix.drawPixel(7, touch, 0xFFFF);
+	}
+
 	matrix.write();			//refresh and write the display
 	
 	delay(20);
